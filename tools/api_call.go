@@ -45,6 +45,14 @@ func handleCallAPI(ctx context.Context, req mcp.CallToolRequest, registry *arrse
 		return mcp.NewToolResultError("service and path are required"), nil
 	}
 
+	// Validate HTTP method against allowed set
+	allowedMethods := map[string]bool{
+		"GET": true, "POST": true, "PUT": true, "PATCH": true, "DELETE": true,
+	}
+	if !allowedMethods[method] {
+		return mcp.NewToolResultError(fmt.Sprintf("unsupported HTTP method %q (allowed: GET, POST, PUT, PATCH, DELETE)", method)), nil
+	}
+
 	svc, err := registry.Get(svcName)
 	if err != nil {
 		return mcp.NewToolResultError(err.Error()), nil

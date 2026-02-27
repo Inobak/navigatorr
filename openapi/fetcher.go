@@ -6,9 +6,14 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/jakenesler/navigatorr/internal"
 )
 
 var fetchClient = &http.Client{Timeout: 30 * time.Second}
+
+// maxSpecSize is the maximum number of bytes read from an OpenAPI spec response.
+const maxSpecSize = 50 * 1024 * 1024 // 50 MB
 
 // Fetch downloads an OpenAPI spec, using cache if available.
 func Fetch(ctx context.Context, url string, cache *Cache) ([]byte, error) {
@@ -33,7 +38,7 @@ func Fetch(ctx context.Context, url string, cache *Cache) ([]byte, error) {
 		return nil, fmt.Errorf("fetching spec from %s: HTTP %d", url, resp.StatusCode)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	data, err := io.ReadAll(io.LimitReader(resp.Body, maxSpecSize))
 	if err != nil {
 		return nil, fmt.Errorf("reading spec: %w", err)
 	}
@@ -41,7 +46,7 @@ func Fetch(ctx context.Context, url string, cache *Cache) ([]byte, error) {
 	// Cache to disk
 	if err := cache.Put(url, data); err != nil {
 		// Non-fatal, just log
-		fmt.Printf("warning: failed to cache spec: %v\n", err)
+		internal.Errorf("failed to cache spec: %v", err)
 	}
 
 	return data, nil

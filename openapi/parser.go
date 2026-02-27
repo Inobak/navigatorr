@@ -6,12 +6,13 @@ import (
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
+	"github.com/jakenesler/navigatorr/internal"
 )
 
 // Parse loads an OpenAPI spec from raw bytes and builds an Index.
 func Parse(ctx context.Context, service string, data []byte) (*Index, error) {
 	loader := openapi3.NewLoader()
-	loader.IsExternalRefsAllowed = true
+	loader.IsExternalRefsAllowed = false
 
 	doc, err := loader.LoadFromData(data)
 	if err != nil {
@@ -21,7 +22,7 @@ func Parse(ctx context.Context, service string, data []byte) (*Index, error) {
 	// Validate (non-fatal — some specs have minor issues)
 	if err := doc.Validate(ctx); err != nil {
 		// Log but don't fail
-		fmt.Printf("warning: spec validation for %s: %v\n", service, err)
+		internal.Errorf("spec validation for %s: %v", service, err)
 	}
 
 	return buildIndex(service, doc), nil

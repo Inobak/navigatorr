@@ -87,15 +87,18 @@ func (c *Client) call(ctx context.Context, method string, args any) (*rpcRespons
 			continue
 		}
 
-		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		_ = resp.Body.Close()
 
 		if resp.StatusCode != 200 {
-			body, _ := io.ReadAll(resp.Body)
 			return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(body))
+		}
+		if err != nil {
+			return nil, fmt.Errorf("reading response: %w", err)
 		}
 
 		var rpcResp rpcResponse
-		if err := json.NewDecoder(resp.Body).Decode(&rpcResp); err != nil {
+		if err := json.Unmarshal(body, &rpcResp); err != nil {
 			return nil, fmt.Errorf("decoding response: %w", err)
 		}
 
