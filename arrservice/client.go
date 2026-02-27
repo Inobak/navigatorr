@@ -13,6 +13,9 @@ var httpClient = &http.Client{
 	Timeout: 30 * time.Second,
 }
 
+// maxResponseSize is the maximum number of bytes read from a service API response.
+const maxResponseSize = 10 * 1024 * 1024 // 10 MB
+
 // DoRequest performs an authenticated HTTP request against a service.
 func (s *Service) DoRequest(ctx context.Context, method, path string, query map[string]string, body []byte) ([]byte, int, error) {
 	url := s.BaseURL + path
@@ -50,7 +53,7 @@ func (s *Service) DoRequest(ctx context.Context, method, path string, query map[
 	}
 	defer resp.Body.Close()
 
-	respBody, err := io.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return nil, resp.StatusCode, fmt.Errorf("reading response: %w", err)
 	}

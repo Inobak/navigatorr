@@ -45,7 +45,7 @@ func (c *Cache) Get(url string) []byte {
 
 // Put stores data in the cache.
 func (c *Cache) Put(url string, data []byte) error {
-	return os.WriteFile(c.cacheFile(url), data, 0644)
+	return os.WriteFile(c.cacheFile(url), data, 0600)
 }
 
 // Invalidate removes a cached entry.
